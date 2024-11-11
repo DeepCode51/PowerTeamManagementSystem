@@ -1,0 +1,21 @@
+spring:
+
+    #数据源配置
+    datasource:
+        #数据库连接地址
+        url: jdbc:mysql://localhost:3306/graduation_powerteam?useSSL=false&useUnicode=yes&characterEncoding=UTF8
+        #连接数据库用户名
+        username: root
+        #连接数据库密码
+        password: 123456
+
+powerTeam:
+
+    #系统标题
+    title: PowerTeam
+
+    #页大小
+    pageSize: 15
+
+    #百度地图ak
+    baiduMapAk: G2zm7GgGGesyLUEoUfVF2jheDGRrkecU

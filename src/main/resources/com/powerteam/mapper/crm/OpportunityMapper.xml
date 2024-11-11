@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.powerteam.mapper.crm.OpportunityMapper">
+
+    <insert id="insert" parameterType="Opportunity" useGeneratedKeys="true" keyProperty="opportunityId">
+        insert into opportunity
+        set name=#{name},customerId=#{customerId},amount=#{amount},endDate=#{endDate},possibility=#{possibility},budgetConfirmed=#{budgetConfirmed},roiConfirmed=#{roiConfirmed},phase=#{phase},win=#{win},lossReason=#{lossReason},description=#{description},closeDate=#{closeDate},createDate=#{createDate},createBy=#{createBy},owner=#{owner}
+    </insert>
+
+    <select id="find" parameterType="QueryOpportunityVo" resultType="Opportunity">
+        select *
+        from opportunity
+        where 1=1
+        <if test="startCreateDate != null">
+            and createDate &gt;= #{startCreateDate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="endCreateDate != null">
+            and createDate &lt;= #{endCreateDate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="userIdList !=null and userIdList.size()>0 ">
+            and exists (select 1 from share_group where opportunity.opportunityId = share_group.resourceId and resourceType=2 and userId in
+            <foreach item="userId" index="index" collection="userIdList" open="(" separator="," close=")">
+                #{userId}
+            </foreach>
+            )
+        </if>
+        <if test="phaseList !=null and phaseList.size()>0 ">
+            and phase in
+            <foreach item="phase" index="index" collection="phaseList" open="(" separator="," close=")">
+                #{phase}
+            </foreach>
+        </if>
+        <if test="word != null and word!='' ">
+            and name like #{word}
+        </if>
+    </select>
+
+    <resultMap id="OpportunityDetail" type="Opportunity" autoMapping="true">
+        <id property="opportunityId" column="opportunityId"/>
+        <association property="customer" javaType="Customer" autoMapping="true" columnPrefix="customer_"/>
+        <association property="createUser" javaType="User" autoMapping="true" columnPrefix="createUser_" notNullColumn="realName"/>
+        <association property="ownerUser" javaType="User" autoMapping="true" columnPrefix="ownerUser_" notNullColumn="realName"/>
+        <collection property="contactsRoleList" ofType="ContactsRole" autoMapping="true" columnPrefix="role_">
+            <association property="contacts" javaType="Contacts" autoMapping="true" columnPrefix="contacts_" notNullColumn="contactsId"/>
+        </collection>
+    </resultMap>
+
+    <select id="findById" parameterType="Integer" resultMap="OpportunityDetail">
+        select opportunity.*,
+        customer.customerId as customer_customerId,
+        customer.customerName as customer_customerName,
+        createUser.realName as createUser_realName,
+        ownerUser.realName as ownerUser_realName,
+        contacts_role.contactsId as role_contactsId,
+        contacts_role.opportunityId as role_opportunityId,
+        contacts_role.role as role_role,
+        contacts.contactsId as role_contacts_contactsId,
+        contacts.name as role_contacts_name,
+        contacts.title as role_contacts_title,
+        contacts.phone as role_contacts_phone
+        from opportunity
+        left join customer on opportunity.customerId = customer.customerId
+        left join user as createUser on opportunity.createBy = createUser.userId
+        left join user as ownerUser on opportunity.owner = ownerUser.userId
+        left join contacts_role on opportunity.opportunityId = contacts_role.opportunityId
+        left join contacts on contacts_role.contactsId = contacts.contactsId
+        where opportunity.opportunityId = #{opportunityId}
+    </select>
+
+    <update id="update" parameterType="Opportunity">
+        update opportunity
+        set name=#{name},customerId=#{customerId},amount=#{amount},endDate=#{endDate},possibility=#{possibility},budgetConfirmed=#{budgetConfirmed},roiConfirmed=#{roiConfirmed},phase=#{phase},win=#{win},lossReason=#{lossReason},description=#{description},closeDate=#{closeDate},owner=#{owner}
+        where opportunityId = #{opportunityId}
+    </update>
+
+    <insert id="insertContactsRole" parameterType="ContactsRole">
+        insert into contacts_role
+        set opportunityId=#{opportunityId},contactsId=#{contactsId},role=#{role}
+    </insert>
+
+    <insert id="updateContactsRole" parameterType="ContactsRole">
+        update contacts_role
+        set role=#{role}
+        where opportunityId=#{opportunityId} and contactsId=#{contactsId}
+    </insert>
+
+    <delete id="deleteContactsRole" parameterType="ContactsRole">
+        delete from contacts_role
+        where opportunityId=#{opportunityId} and contactsId=#{contactsId}
+    </delete>
+
+    <delete id="delete" parameterType="Opportunity">
+        delete from opportunity
+        where opportunityId=#{opportunityId}
+    </delete>
+
+    <select id="findMonthlyFunnel" parameterType="QueryOpportunityVo" resultType="Map">
+        select phase,count(*) as total
+        from opportunity
+        where 1=1
+        <if test="startCreateDate != null">
+            and createDate &gt;= #{startCreateDate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="endCreateDate != null">
+            and createDate &lt;= #{endCreateDate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="userIdList !=null and userIdList.size()>0 ">
+            and exists (select 1 from share_group where opportunity.opportunityId = share_group.resourceId and resourceType=2 and userId in
+            <foreach item="userId" index="index" collection="userIdList" open="(" separator="," close=")">
+                #{userId}
+            </foreach>
+            )
+        </if>
+        <if test="phaseList !=null and phaseList.size()>0 ">
+            and phase in
+            <foreach item="phase" index="index" collection="phaseList" open="(" separator="," close=")">
+                #{phase}
+            </foreach>
+        </if>
+        group by phase
+    </select>
+
+    <select id="findMonthlyConversion" parameterType="QueryOpportunityVo" resultType="Map">
+        SELECT 1 as status,count(*) as total
+        FROM opportunity
+        where phase = 5 and win = 1
+        <if test="startCreateDate != null">
+            and createDate &gt;= #{startCreateDate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="endCreateDate != null">
+            and createDate &lt;= #{endCreateDate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="userIdList !=null and userIdList.size()>0 ">
+            and exists (select 1 from share_group where opportunity.opportunityId = share_group.resourceId and resourceType=2 and userId in
+            <foreach item="userId" index="index" collection="userIdList" open="(" separator="," close=")">
+                #{userId}
+            </foreach>
+            )
+        </if>
+
+        union
+
+        SELECT 2 as status,count(*) as total
+        FROM opportunity
+        where phase = 5 and win = 0
+        <if test="startCreateDate != null">
+            and createDate &gt;= #{startCreateDate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="endCreateDate != null">
+            and createDate &lt;= #{endCreateDate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="userIdList !=null and userIdList.size()>0 ">
+            and exists (select 1 from share_group where opportunity.opportunityId = share_group.resourceId and resourceType=2 and userId in
+            <foreach item="userId" index="index" collection="userIdList" open="(" separator="," close=")">
+                #{userId}
+            </foreach>
+            )
+        </if>
+
+        union
+
+        SELECT 3 as status,count(*) as total
+        FROM opportunity
+        where phase &lt;&gt; 5
+        <if test="startCreateDate != null">
+            and createDate &gt;= #{startCreateDate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="endCreateDate != null">
+            and createDate &lt;= #{endCreateDate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="userIdList !=null and userIdList.size()>0 ">
+            and exists (select 1 from share_group where opportunity.opportunityId = share_group.resourceId and resourceType=2 and userId in
+            <foreach item="userId" index="index" collection="userIdList" open="(" separator="," close=")">
+                #{userId}
+            </foreach>
+            )
+        </if>
+    </select>
+
+    <select id="findRecentlyClosing" parameterType="QueryOpportunityVo" resultType="Opportunity">
+        select *
+        from opportunity
+        where 1=1
+        <if test="endDate != null">
+            and endDate &gt;=now() and endDate &lt;= #{endDate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="userIdList !=null and userIdList.size()>0 ">
+            and exists (select 1 from share_group where opportunity.opportunityId = share_group.resourceId and resourceType=2 and userId in
+            <foreach item="userId" index="index" collection="userIdList" open="(" separator="," close=")">
+                #{userId}
+            </foreach>
+            )
+        </if>
+        <if test="phaseList !=null and phaseList.size()>0 ">
+            and phase in
+            <foreach item="phase" index="index" collection="phaseList" open="(" separator="," close=")">
+                #{phase}
+            </foreach>
+        </if>
+        limit 10;
+    </select>
+</mapper>

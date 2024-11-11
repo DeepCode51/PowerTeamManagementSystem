@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.powerteam.mapper.sys.MenuMapper">
+
+    <select id="findUserMenuList" parameterType="Integer" resultType="Menu">
+        select distinct menu.menuId,menu.pid,menu.menuName,menu.menuCode,menu.menuLink,menu.menuIcon,menu.menuIndex
+        from user
+        inner join role_user on user.userId = role_user.userId
+        inner join role on role_user.roleId = role.roleId
+        inner join role_menu on role_user.roleId = role_menu.roleId
+        inner join menu on role_menu.menuId = menu.menuId
+        where user.status = 1 and user.userId = #{userId}
+    </select>
+
+    <select id="findAllMenu" resultType="Menu">
+        select menu.menuId,menu.pid,menu.menuName,menu.menuCode,menu.menuLink,menu.menuIcon,menu.menuIndex
+        from menu
+    </select>
+
+    <select id="findRoleMenu" parameterType="Integer" resultType="Menu">
+        select
+        menu.*
+        from role
+        inner join role_menu on role.roleId = role_menu.roleId
+        inner join menu on role_menu.menuId = menu.menuId
+        where role.roleId = #{roleId}
+    </select>
+
+    <select id="existMenuName" parameterType="Menu" resultType="Boolean">
+        select count(*)>0
+        from menu
+        where menuName = #{menuName}
+        <if test="menuId != null">
+            and menuId != #{menuId}
+        </if>
+    </select>
+
+    <select id="existMenuCode" parameterType="Menu" resultType="Boolean">
+        select count(*)>0
+        from menu
+        where menuCode = #{menuCode}
+        <if test="menuId != null">
+            and menuId != #{menuId}
+        </if>
+    </select>
+
+    <insert id="insert" parameterType="Menu">
+        insert into menu (pid,menuName,menuCode,menuLink,menuIcon,menuIndex)
+        values (#{pid}, #{menuName},#{menuCode}, #{menuLink}, #{menuIcon},#{menuIndex})
+    </insert>
+
+    <select id="findMaxMenuIndex" resultType="Integer">
+        select max(menuIndex) from menu
+    </select>
+
+    <delete id="delete" parameterType="Integer">
+        delete from menu
+        where menuId = #{menuId}
+    </delete>
+
+    <delete id="deleteChildren" parameterType="Integer">
+        delete from menu
+        where pid = #{menuId}
+    </delete>
+
+    <select id="findPreviousMenu" resultType="Menu">
+        <![CDATA[
+        select b.*
+        FROM menu a
+        inner join menu b
+          on a.pid = b.pid and b.menuIndex < a.menuIndex
+        where a.menuId = #{menuId}
+        order by b.menuIndex desc
+        limit 1
+        ]]>
+    </select>
+
+    <select id="findNextMenu" resultType="Menu">
+        <![CDATA[
+        select b.*
+        FROM menu a
+        inner join menu b
+          on a.pid = b.pid and b.menuIndex > a.menuIndex
+        where a.menuId = #{menuId}
+        order by b.menuIndex
+        limit 1
+        ]]>
+    </select>
+
+    <select id="findById" resultType="Menu">
+        select * from menu where menuId = #{menuId}
+    </select>
+
+    <update id="update" parameterType="Menu">
+        update menu
+        set pid = #{pid},menuName = #{menuName},menuCode = #{menuCode},menuLink = #{menuLink},menuIcon = #{menuIcon},menuIndex = #{menuIndex}
+        where menuId = #{menuId}
+    </update>
+</mapper>

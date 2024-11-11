@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.powerteam.mapper.crm.ActivityMapper">
+
+    <insert id="insert" parameterType="Activity">
+        insert into activity
+        set resourceType=#{resourceType},resourceId=#{resourceId},activityType=#{activityType},content=#{content},createDate=#{createDate},createBy=#{createBy}
+    </insert>
+
+    <resultMap id="ActivityResult" type="Activity" autoMapping="true">
+        <association property="createByUser" javaType="User" autoMapping="true"/>
+        <association property="customer" javaType="Customer" autoMapping="true" columnPrefix="customer_" notNullColumn="customerId"/>
+        <association property="opportunity" javaType="Opportunity" autoMapping="true" columnPrefix="opportunity_" notNullColumn="opportunityId"/>
+    </resultMap>
+
+    <select id="find" parameterType="QueryActivityVo" resultMap="ActivityResult">
+        select activity.*,user.userName,user.realName,user.avatar,customer.customerId as customer_customerId, customer.customerName as customer_customerName,opportunity.opportunityId as opportunity_opportunityId, opportunity.name as opportunity_name
+        from activity
+        inner join user on activity.createBy = user.userId
+        left join customer on resourceType = 1 and customer.customerId = activity.resourceId
+        left join opportunity on resourceType = 2 and opportunity.opportunityId = activity.resourceId
+        where 1=1
+        <if test="resourceType != null">
+            and activity.resourceType = #{resourceType}
+        </if>
+        <if test="resourceId != null">
+            and activity.resourceId = #{resourceId}
+        </if>
+        <if test="activityType != null and activityType.size()>0 ">
+            and activity.activityType in
+            <foreach item="item" index="index" collection="activityType" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="workDay != null">
+            and (TO_DAYS(activity.createDate) - TO_DAYS(#{workDay})) =0
+        </if>
+        <if test="createBy != null and createBy.size()>0 ">
+            and activity.createBy in
+            <foreach item="id" index="index" collection="createBy" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        <if test="order !=null and order!='' ">
+            order by ${order}
+        </if>
+    </select>
+
+    <delete id="deleteByResource" parameterType="Activity">
+        delete from activity
+        where resourceType=#{resourceType} and resourceId=#{resourceId}
+    </delete>
+
+    <delete id="delete" parameterType="Activity">
+        delete from activity
+        where activityId=#{activityId}
+    </delete>
+</mapper>

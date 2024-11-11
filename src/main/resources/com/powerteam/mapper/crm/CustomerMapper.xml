@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.powerteam.mapper.crm.CustomerMapper">
+
+    <resultMap id="CustomerResult" type="Customer" autoMapping="true">
+        <association property="industry" javaType="Industry" autoMapping="true"/>
+        <association property="customerCategory" javaType="CustomerCategory" autoMapping="true"/>
+        <association property="source" javaType="Source" autoMapping="true"/>
+
+        <association property="province" javaType="District" columnPrefix="province" autoMapping="true"/>
+        <association property="city" javaType="District" columnPrefix="city" autoMapping="true"/>
+    </resultMap>
+
+    <select id="find" parameterType="QueryCustomerVo" resultMap="CustomerResult">
+        select customer.*,industry.*,customer_category.*,source.*,p.id as provinceId,p.name as provinceName,p.pid as provincePid,c.id as cityId,c.name as cityName,c.pid as cityPid
+        from customer
+        left join industry on customer.industryId = industry.industryId
+        left join customer_category on customer.categoryId = customer_category.categoryId
+        left join source on customer.sourceId = source.sourceId
+        left join district as p on customer.provinceId = p.id
+        left join district as c on customer.cityId = c.id
+        where 1=1
+        <if test="word != null and word!='' ">
+            and customerName like #{word}
+        </if>
+        <if test="order !=null and order!='' ">
+            order by ${order}
+        </if>
+    </select>
+
+    <select id="findAllIndustry" resultType="Industry">
+        select *
+        from industry
+    </select>
+
+    <select id="findAllCustomerCategory" resultType="CustomerCategory">
+        select *
+        from customer_category
+    </select>
+
+    <select id="findAllSource" resultType="Source">
+        select *
+        from source
+    </select>
+
+    <insert id="insert" parameterType="Customer" useGeneratedKeys="true" keyProperty="customerId">
+        insert into customer
+        set customerName=#{customerName},industryId=#{industryId},categoryId=#{categoryId},website=#{website},tel=#{tel},star=#{star},address=#{address},provinceId=#{provinceId},cityId=#{cityId},sourceId=#{sourceId},lng=#{lng},lat=#{lat},potential=#{potential},createDate=#{createDate},createBy=#{createBy},owner=#{owner}
+    </insert>
+
+    <select id="existCustomerName" parameterType="Customer" resultType="Boolean">
+        select count(*)>0
+        from customer
+        where customerName = #{customerName}
+        <if test="customerId != null">
+            and customerId != #{customerId}
+        </if>
+    </select>
+
+    <select id="findById" parameterType="Integer" resultMap="CustomerResult">
+        select customer.*,industry.*,customer_category.*,source.*,p.id as provinceId,p.name as provinceName,p.pid as provincePid,c.id as cityId,c.name as cityName,c.pid as cityPid
+        from customer
+        left join industry on customer.industryId = industry.industryId
+        left join customer_category on customer.categoryId = customer_category.categoryId
+        left join source on customer.sourceId = source.sourceId
+        left join district as p on customer.provinceId = p.id
+        left join district as c on customer.cityId = c.id
+        where customerId = #{customerId}
+    </select>
+
+    <update id="update" parameterType="Customer">
+        update customer
+        set customerName=#{customerName},industryId=#{industryId},categoryId=#{categoryId},website=#{website},tel=#{tel},star=#{star},address=#{address},provinceId=#{provinceId},cityId=#{cityId},sourceId=#{sourceId},lng=#{lng},lat=#{lat},potential=#{potential},owner=#{owner}
+        where customerId = #{customerId}
+    </update>
+
+    <insert id="insertShareGroup" parameterType="ShareGroup">
+        insert into share_group
+        set shareGroupId=#{shareGroupId},resourceType=#{resourceType},resourceId=#{resourceId},userId=#{userId}
+    </insert>
+
+</mapper>

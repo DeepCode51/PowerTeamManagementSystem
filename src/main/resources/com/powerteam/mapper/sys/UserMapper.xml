@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.powerteam.mapper.sys.UserMapper">
+
+    <select id="signIn" parameterType="map" resultType="User">
+        select *
+        from user
+        where userName = #{userName} and password = #{password}
+    </select>
+
+    <select id="existUserName" parameterType="User" resultType="Boolean">
+        select count(*)>0
+        from user
+        where userName = #{userName}
+        <if test="userId != null">
+            and userId != #{userId}
+        </if>
+    </select>
+
+    <insert id="insert" parameterType="User">
+        insert into user (userName, password,avatar,userCode,realName,gender,status,createAt)
+        values (#{userName}, #{password},#{avatar}, #{userCode}, #{realName},#{gender}, #{status}, #{createAt,jdbcType=TIMESTAMP})
+    </insert>
+
+    <select id="find" parameterType="QueryUserVo" resultType="User">
+        select userId,userName,avatar,userCode,realName,gender,status,createAt
+        from user
+        where 1=1
+        <if test="word != null and word!='' ">
+            and realName like #{word} or userName like #{word}
+        </if>
+        <if test="status != null">
+            and status = #{status}
+        </if>
+        <if test="startDate != null">
+            and createAt &gt;= #{startDate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="endDate != null">
+            and createAt &lt;= #{endDate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="order !=null and order!='' ">
+            order by ${order}
+        </if>
+    </select>
+
+    <delete id="deleteByIds">
+        delete from user
+        where userId in
+        <foreach item="id" index="index" collection="list"
+                 open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="findById" parameterType="Integer" resultType="User">
+        select userId,userName,avatar,userCode,realName,gender,status,createAt
+        from user
+        where userId = #{userId}
+    </select>
+
+    <select id="findWithPasswordById" parameterType="Integer" resultType="User">
+        select userId,userName,password,avatar,userCode,realName,gender,status,createAt
+        from user
+        where userId = #{userId}
+    </select>
+
+    <update id="update" parameterType="User">
+        update user
+        set userName = #{userName},userCode = #{userCode},realName = #{realName},gender = #{gender},status = #{status},avatar=#{avatar}
+        where userId = #{userId}
+    </update>
+
+    <update id="resetPassword" parameterType="User">
+        update user
+        set password = #{password}
+        where userId = #{userId}
+    </update>
+</mapper>

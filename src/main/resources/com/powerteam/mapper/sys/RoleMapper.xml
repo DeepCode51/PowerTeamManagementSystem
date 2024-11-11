@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.powerteam.mapper.sys.RoleMapper">
+
+    <select id="findAll" resultType="Role">
+        select roleId,roleName,isSystemRole
+        from role
+        order by roleId
+    </select>
+
+    <select id="existRoleName" parameterType="Role" resultType="Boolean">
+        select count(*)>0
+        from role
+        where roleName = #{roleName}
+        <if test="roleId != null">
+            and roleId != #{roleId}
+        </if>
+    </select>
+
+    <insert id="insert" parameterType="Role">
+        insert into role (roleName, isSystemRole)
+        values (#{roleName}, #{isSystemRole})
+    </insert>
+
+    <delete id="deleteByIds">
+        delete from role
+        where roleId IN
+        <foreach item="id" index="index" collection="list"
+                 open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="findById" parameterType="Integer" resultType="Role">
+        select roleId,roleName,isSystemRole
+        from role
+        where roleId = #{roleId}
+    </select>
+
+    <update id="update" parameterType="Role">
+        update role
+        set roleName=#{roleName}
+        where roleId = #{roleId}
+    </update>
+
+    <select id="findUserInRole" parameterType="QueryRoleUserVo" resultType="User">
+        select user.*
+        from role
+        inner join role_user on role.roleId = role_user.roleId
+        inner join user on role_user.userId = user.userId
+        where user.status = 1 and role.roleId = #{roleId}
+        <if test="word != null and word!='' ">
+            and (realName like #{word} or userCode like #{word})
+        </if>
+        order by realName,userCode
+    </select>
+
+    <delete id="deleteRoleUser" parameterType="RoleUser">
+        delete from role_user
+        where roleId = #{roleId} and userId = #{userId}
+    </delete>
+
+    <select id="findUserNotInRole" parameterType="QueryRoleUserVo" resultType="User">
+        select user.*
+        from user
+        where user.status = 1 and not exists ( select * from role_user where role_user.userId = user.userId and role_user.roleId = #{roleId} )
+        <if test="word != null and word!='' ">
+            and (realName like #{word} or userCode like #{word})
+        </if>
+        order by realName,userCode
+    </select>
+
+    <insert id="insertRoleUser" parameterType="RoleUser">
+        insert into role_user (roleId,userId)
+        values (#{roleId},#{userId})
+    </insert>
+
+    <insert id="insertRoleMenu" parameterType="RoleMenu">
+        insert into role_menu (roleId,menuId)
+        values (#{roleId},#{menuId})
+    </insert>
+
+    <delete id="deleteRoleMenu" parameterType="Integer">
+        delete from role_menu
+        where roleId = #{roleId}
+    </delete>
+</mapper>

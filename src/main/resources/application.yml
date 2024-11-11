@@ -1,0 +1,32 @@
+spring:
+
+    #数据源配置
+    datasource:
+        driver-class-name: com.mysql.jdbc.Driver
+        type: com.zaxxer.hikari.HikariDataSource
+        poolName: PowerTeamPool
+
+    #静态资源缓存时间
+    resources:
+        cache-period: 31536000
+
+    profiles:
+        include: powerteam
+
+#邮件配置
+    mail:
+        default-encoding: UTF-8
+        protocol: smtp
+        host: smtp.163.com
+        port: 25
+        username: test@163.com
+        password: test
+        test-connection: false
+
+#mybatis配置
+mybatis:
+    config-location : classpath:mybatis-config.xml
+
+#日志配置
+logging:
+    level.com.powerteam: DEBUG

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.powerteam.mapper.masterData.OrgUnitMapper">
+
+    <select id="findAllOrgUnit" resultType="OrgUnit">
+        select *
+        from org_unit
+    </select>
+
+    <select id="existRootOrgUnit" resultType="Boolean">
+        select count(*)>0 from org_unit
+        where pid is null
+    </select>
+
+    <select id="findMaxOrgIndex" resultType="Integer">
+        select max(orgIndex) from org_unit
+    </select>
+
+    <insert id="insert" parameterType="OrgUnit">
+        insert into org_unit (orgUnitName,pid,orgIndex)
+        values (#{orgUnitName}, #{pid},#{orgIndex})
+    </insert>
+
+    <update id="update" parameterType="OrgUnit">
+        update org_unit
+        set orgUnitName = #{orgUnitName},pid = #{pid},orgIndex = #{orgIndex}
+        where orgUnitId = #{orgUnitId}
+    </update>
+
+    <delete id="deleteWithChildren" parameterType="Integer">
+        delete from org_unit
+        where find_in_set(orgUnitId,findAllSubOrgUnit(#{orgUnitId}))
+    </delete>
+
+    <select id="findById" resultType="OrgUnit">
+        select *
+        from org_unit
+        where orgUnitId = #{orgUnitId}
+    </select>
+
+    <select id="findPreviousUnit" resultType="OrgUnit">
+        select b.*
+        FROM org_unit a
+        inner join org_unit b
+          on a.pid = b.pid and b.orgIndex &lt; a.orgIndex
+        where a.orgUnitId = #{orgUnitId}
+        order by b.orgIndex desc
+        limit 1
+    </select>
+
+    <select id="findNextUnit" resultType="OrgUnit">
+        select b.*
+        FROM org_unit a
+        inner join org_unit b
+          on a.pid = b.pid and b.orgIndex &gt; a.orgIndex
+        where a.orgUnitId = #{orgUnitId}
+        order by b.orgIndex
+        limit 1
+    </select>
+
+    <select id="findUserNotInOrgUnit" parameterType="QueryOrgUnitUserVo" resultType="User">
+        select user.*
+        from user
+        where user.status = 1 and not exists ( select * from orgunit_user where orgunit_user.userId = user.userId and orgunit_user.orgUnitId = #{orgUnitId} )
+        <if test="word != null and word!='' ">
+            and (userName like #{word} or realName like #{word})
+        </if>
+        <if test="order !=null and order!='' ">
+            order by ${order}
+        </if>
+    </select>
+
+    <select id="findUserInOrgUnit" parameterType="QueryOrgUnitUserVo" resultType="OrgUnitUser">
+        select user.*,orgunit_user.isUnitHead,orgunit_user.orgUnitId
+        from org_unit
+        inner join orgunit_user on org_unit.orgUnitId = orgunit_user.orgUnitId
+        inner join user on orgunit_user.userId = user.userId
+        where user.status = 1 and org_unit.orgUnitId = #{orgUnitId}
+        <if test="word != null and word!='' ">
+            and (realName like #{word} or userCode like #{word})
+        </if>
+        <if test="order !=null and order!='' ">
+            order by ${order}
+        </if>
+    </select>
+
+    <insert id="insertOrgUnitUser" parameterType="OrgUnitUser">
+        insert into orgunit_user (orgUnitId,userId,isUnitHead)
+        values (#{orgUnitId},#{userId},#{isUnitHead})
+    </insert>
+
+    <delete id="deleteOrgUnitUser" parameterType="OrgUnitUser">
+        delete from orgunit_user
+        where orgUnitId = #{orgUnitId} and userId = #{userId}
+    </delete>
+
+    <update id="removeUnitHead" parameterType="OrgUnitUser">
+        update orgunit_user
+        set isUnitHead = 0
+        where orgUnitId = #{orgUnitId}
+    </update>
+
+    <update id="setUnitHead" parameterType="OrgUnitUser">
+        update orgunit_user
+        set isUnitHead = 1
+        where orgUnitId = #{orgUnitId} and userId = #{userId}
+    </update>
+
+    <select id="findSubordinate" resultType="Integer" statementType="CALLABLE">
+        {call proc_findSubordinate(#{userId})}
+    </select>
+</mapper>

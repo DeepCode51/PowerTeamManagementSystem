@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.powerteam.mapper.sys.FunMapper">
+
+    <select id="findUserFunList" parameterType="Integer" resultType="Fun">
+        select distinct fun.funId,fun.funName,fun.funCode
+        from user
+        inner join role_user on user.userId = role_user.userId
+        inner join role on role_user.roleId = role.roleId
+        inner join role_fun on role.roleId = role_fun.roleId
+        inner join fun on role_fun.funId = fun.funId
+        where user.status=1 and user.userId = #{userId}
+    </select>
+
+    <select id="findAll" resultType="Fun">
+        select *
+        from fun
+        order by funName
+    </select>
+
+    <select id="findFunInRole" parameterType="Integer" resultType="Fun">
+        select fun.*
+        from role_fun
+        inner join fun on role_fun.funId = fun.funId
+        where role_fun.roleId = #{roleId}
+        order by fun.funName
+    </select>
+
+    <delete id="deleteRoleFun" parameterType="Integer">
+        delete from role_fun
+        where roleId = #{roleId}
+    </delete>
+
+    <insert id="insertRoleFun" parameterType="RoleFun">
+        insert into role_fun (roleId,funId)
+        values (#{roleId},#{funId})
+    </insert>
+
+</mapper>

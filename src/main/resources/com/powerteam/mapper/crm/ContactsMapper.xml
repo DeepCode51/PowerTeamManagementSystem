@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.powerteam.mapper.crm.ContactsMapper">
+
+    <insert id="insert" parameterType="Contacts">
+        insert into contacts
+        set customerId=#{customerId},name=#{name},title=#{title},dept=#{dept},phone=#{phone},sex=#{sex},email=#{email},tel=#{tel},fax=#{fax},qq=#{qq},wx=#{wx},createDate=#{createDate},createBy=#{createBy}
+    </insert>
+
+    <resultMap id="ContactsResult" type="Contacts" autoMapping="true">
+        <association property="createByUser" javaType="User" autoMapping="true"/>
+        <association property="customer" javaType="Customer">
+            <result property="customerName" column="customerName"/>
+        </association>
+    </resultMap>
+
+    <select id="find" parameterType="QueryContactsVo" resultMap="ContactsResult">
+        select contacts.*,user.userName,user.realName,customer.customerName
+        from contacts
+        inner join user on contacts.createBy = user.userId
+        left join customer on contacts.customerId = customer.customerId
+        where 1=1
+        <if test="excludeContactsId != null and excludeContactsId.size()>0 ">
+            and contactsId not in
+            <foreach item="contactsId" index="index" collection="excludeContactsId" open="(" separator="," close=")">
+                #{contactsId}
+            </foreach>
+        </if>
+        <if test="word != null and word!='' ">
+            and name like #{word}
+        </if>
+        <if test="customerId != null ">
+            and contacts.customerId = #{customerId}
+        </if>
+        <if test="order !=null and order!='' ">
+            order by ${order}
+        </if>
+    </select>
+
+    <select id="findById" parameterType="Integer" resultMap="ContactsResult">
+        select contacts.*,user.userName,user.realName,customer.customerName
+        from contacts
+        inner join user on contacts.createBy = user.userId
+        left join customer on contacts.customerId = customer.customerId
+        where contactsId=#{contactsId}
+    </select>
+
+    <update id="update" parameterType="Contacts">
+        update contacts
+        set customerId=#{customerId},name=#{name},title=#{title},dept=#{dept},phone=#{phone},sex=#{sex},email=#{email},tel=#{tel},fax=#{fax},qq=#{qq},wx=#{wx}
+        where contactsId = #{contactsId}
+    </update>
+</mapper>
